@@ -21,7 +21,7 @@ def openFile(fileName, op):
         return open(fileName, op)
 
 def getCfIP(domain):
-    cfCredentialsFile = openFile(FILE_PATH + "/credentials.json", "r")
+    cfCredentialsFile = openFile(str(FILE_PATH) + "/credentials.json", "r")
     cfCredentials = json.load(cfCredentialsFile)
     cfCredentialsFile.close()
     getRequest = "curl -X GET \"" + CF_BASE_URL + "zones/" + cfCredentials["ZONE_ID"] + "/dns_records/\"" + " -H \"Content-Type: application/json\" -H \"Authorization: Bearer " + cfCredentials["KEY"] + "\" " + "| grep AAAA " + "| grep " + domain
@@ -46,7 +46,7 @@ def getMachineIP():
     return machineIP[0]
 
 def updateRecord(domainID, newIP):
-    cfCredentialsFile = openFile("/credentials.json", "r")
+    cfCredentialsFile = openFile(str(FILE_PATH) + "/credentials.json", "r")
     cfCredentials = json.load(cfCredentialsFile)
     cfCredentialsFile.close()
     patchRequest = "curl -X PATCH \"" + CF_BASE_URL + "zones/" + cfCredentials["ZONE_ID"] + "/dns_records/" + domainID  + "\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer " + cfCredentials["KEY"] + "\" --data \'{\"content\":\"" + newIP  + "\"}\'"
