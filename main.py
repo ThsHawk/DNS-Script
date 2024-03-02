@@ -2,6 +2,7 @@ import time
 import json
 import sys
 import subprocess
+from Record import Record 
 
 CF_BASE_URL = "https://api.cloudflare.com/client/v4/"
 
@@ -21,12 +22,18 @@ def getCfIP(domain):
     cfCredentialsFile = openFile("credentials.json", "r")
     cfCredentials = json.load(cfCredentialsFile)
     cfCredentialsFile.close()
-    getRequest = "curl -X GET \"" + CF_BASE_URL + "zones/" + cfCredentials["ZONE_ID"] + "/dns_records/export\"" + " -H \"Content-Type: application/json\" -H \"Authorization: Bearer " + cfCredentials["KEY"] + "\" " + "| grep AAAA " + "| grep " + domain
-    cfIP = subprocess.check_output(getRequest, shell=True, universal_newlines=True)
-    cfIP = cfIP.split("\t")
-    cfIP = cfIP[4]
-    cfIP = cfIP[:len(cfIP)-1]
-    return cfIP
+    getRequest = "curl -X GET \"" + CF_BASE_URL + "zones/" + cfCredentials["ZONE_ID"] + "/dns_records/\"" + " -H \"Content-Type: application/json\" -H \"Authorization: Bearer " + cfCredentials["KEY"] + "\" " + "| grep AAAA " + "| grep " + domain
+    getResponse = subprocess.check_output(getRequest, shell=True, universal_newlines=True)
+    records = getResponse["result"]
+    for i in records:
+        recordName = i["name"]
+        if recordName == domain:
+            record = Record()
+            record.setId(i["id"])
+            record.setName(i["name"])
+            record.setContent(i["content"])
+            return record
+    return None
 
 def getMachineIP():
     cmmd = "ip a | grep inet6 | grep global"
@@ -44,11 +51,11 @@ def updateRecord(domainID, newIP):
     patchResponse = json.loads(patchResponse)
     return (patchResponse["success"], patchResponse["errors"])
 
-def main(domain, domainID):
+def main(domain):
     cfIP = getCfIP(domain)
     machineIP = getMachineIP()
-    if cfIP != machineIP:
-        status = updateRecord(domainID, machineIP)
+    if cfIP.getContent() != machineIP:
+        status = updateRecord(cfIP.getId(), machineIP)
         if status[0]:
             print("CloudFlare DNS Recors updated successfully!")
         else:
@@ -57,5 +64,5 @@ def main(domain, domainID):
         print("CloudFlare DNS Record is up-to-date!")
         exit()
 
-if len(sys.argv) == 3:
-    main(sys.argv[1], sys.argv[2])
+if len(sys.argv) == 2:
+    main(sys.argv[1])
