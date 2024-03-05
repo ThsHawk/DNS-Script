@@ -11,7 +11,7 @@ FILE_PATH = Path(__file__).parent
 def logger(message):
     log = "[" + time.ctime() + "]" + " " + message
     logFile = open(str(FILE_PATH) + "/dns-script.log", "a")
-    logFile.write(log)
+    logFile.write(log + "\n")
     logFile.close()
 
 def openFile(fileName, op):
